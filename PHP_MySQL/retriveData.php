@@ -38,7 +38,12 @@
         echo "</table>";
     } 
     else {
-        echo "0 results";
+        echo "<table>";
+        echo "<tr> <th>ID</th> <th>TYPE</th> </tr>";
+        echo "<tr>";
+        echo "<td colspan='2'>0 Results</td>";
+        echo "</tr>";
+        echo "</table>";
     }
 
     CloseCon($mySqlConn);

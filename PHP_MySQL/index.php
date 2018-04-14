@@ -36,7 +36,7 @@
 
         /* 
         ========================================================
-            Colors 
+            Display / Colours 
         ========================================================
         */
         body {
@@ -57,25 +57,36 @@
         }
 
         #navbar, .navbarItem {
-            border: 1px solid lightblue;
-            text-decoration: none;
+            border: 5px solid lightblue;
+            border-style: outset;
         }
-        
+
         .navbarItem:hover {
             background: lightblue;
+        }
+
+        /* 
+        ========================================================
+            Text
+        ========================================================
+        */
+        .navbarItem {
+            text-decoration: none;
         }
     </style>
 </head>
 
+<!-- ================================================================ -->
+<!-- ================================================================ -->
+<!-- ================================================================ -->
+
 <body>
+    <?php include "navbar.php" ?> 
 
-<?php include "navbar.php" ?> 
+    <h1>Home Page</h1>
 
-<h1>Home Page</h1>
-
-<div id="data">
-    <?php include "retriveData.php"; ?>
-</div>
-
+    <div id="data">
+        <?php include "retriveData.php"; ?>
+    </div>
 </body>
 </html>

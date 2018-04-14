@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>box3D</title>
+    <style>
+        body {
+            background: black;
+        }
+
+        #container {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            margin: 10em auto;
+            /* border: 3px solid black; */
+            perspective: 1000px;
+        }
+
+        #cube {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        #cube div {
+            display: block;
+            position: absolute;
+            width: 196px;
+            height: 196px;
+            border: 4px solid black;
+            line-height: 196px;
+            font-size: 120px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            box-shadow: 20px 20px 500em 10px rgba(230, 175, 24, 0.5);
+        }
+
+        #cube #front {
+            transform: rotateY( 0deg) translateZ( 100px);
+        }
+
+        #cube #back {
+            transform: rotateX( 180deg) translateZ( 100px);
+        }
+
+        #cube #right {
+            transform: rotateY( 90deg) translateZ( 100px);
+        }
+
+        #cube #left {
+            transform: rotateY( -90deg) translateZ( 100px);
+        }
+
+        #cube #top {
+            transform: rotateX( 90deg) translateZ( 100px);
+        }
+
+        #cube #bottom {
+            transform: rotateX( -90deg) translateZ( 100px);
+        }
+
+        #cube {
+            transform: translateZ( -100px);
+        }
+
+        #front {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t3.rbxcdn.com/6d8ee6bcd3909baa31dfc48534fc4b64"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+
+        #back {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t0.rbxcdn.com/685d8f43390c4d75c28f2badc62c0e45"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+
+        #right {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t4.rbxcdn.com/9286abaa299d39126fe2e511f8a7cf9a"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+
+        #left {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t6.rbxcdn.com/c49d62a1ee0561a5dadcdb075dade1c9"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+
+        #top {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t6.rbxcdn.com/b6ff2a9819f5753c61e1d7463bafd43a"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+
+        #bottom {
+            background: rgba(255, 255, 255, 1);
+            background-image: url("https://t4.rbxcdn.com/e5af2af3a647294456dc6b540ae50a5a"), url("http://virm.net/img/Fashionable-Diagonal-Pattern-Wood-Floor-Designs-With.jpg");
+            background-position: center;
+            background-size: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='container'>
+        <div id="cube">
+            <div id="front"></div>
+            <div id="back"></div>
+            <div id="right"></div>
+            <div id="left"></div>
+            <div id="top"></div>
+            <div id="bottom"></div>
+        </div>
+    </div>
+
+    <script>
+        var deg = 0;
+
+        function rotateCube() {
+            document.getElementById("cube").style.transform = "translateZ( -100px) rotate3d(1, 1, 1.2," + deg + "deg)";
+        }
+
+        function step(timestamp) {
+            if (!start) { 
+                var start = timestamp;
+            }
+
+            var progress = timestamp - start;
+
+            if(deg >= 360) {
+                deg = 0;
+            }
+
+            deg += 0.5;
+            rotateCube();
+
+            if (progress < 1000 / 60) {
+                window.requestAnimationFrame(step);
+            }
+        }
+
+        
+
+        window.onload = function () {
+            window.requestAnimationFrame(step);
+        }
+    </script>
+</body>
+
+</html>
