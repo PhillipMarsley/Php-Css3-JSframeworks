@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Javascript particles</title>
+    <style>
+        #container {
+            width: 40em;
+            height: 40em;
+            border: 5px solid forestgreen;
+            background: blanchedalmond;
+        }
+
+        #canvas {
+            margin: 1em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        //============================================
+        //  Declare Variables
+        //============================================
+        var container = document.getElementById("container");
+        var canvas = document.getElementById("canvas");
+        var gc = canvas.getContext("2d");
+        //===========================================
+        //  
+        //===========================================
+        window.requestAnimFrame = (function () {
+            return window.requestAnimationFrame ||
+                window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                window.oRequestAnimationFrame ||
+                window.msRequestAnimationFrame ||
+                function (/* function */ callback, /* DOMElement */ element) {
+                    window.setTimeout(callback, 1000 / 60);
+                };
+        })();
+
+        var canvasArea = {
+            canvas: document.getElementById("canvas"),
+            create: function () {
+                this.canvas.width = container.clientWidth
+                    - (container.offsetWidth - container.clientWidth)
+                    - parseInt(window.getComputedStyle(this.canvas).marginRight)
+                    - parseInt(window.getComputedStyle(container).borderRightWidth);
+                this.canvas.height = container.clientHeight
+                    - (container.offsetHeight - container.clientHeight)
+                    - parseInt(window.getComputedStyle(this.canvas).marginBottom)
+                    - parseInt(window.getComputedStyle(container).borderBottomWidth);
+                this.context = this.canvas.getContext("2d");
+                this.color;
+            },
+            clear: function () {
+                gc.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            },
+            paint: function () {
+                gc.fillStyle = this.color;
+                gc.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        }
+
+        function particle(x, y, life, angle, speed) {
+            this.color = "purple";
+            this.radius = 2;
+            this.sAngle = 0 * Math.PI;
+            this.eAngle = 2 * Math.PI;
+            this.life = life;
+            var angleInRadians = angle * Math.PI / 180;
+            this.position = {
+                x: x,
+                y: y
+            };
+            this.velocity = {
+                x: speed * Math.cos(angleInRadians),
+                y: -speed * Math.sin(angleInRadians)
+            };
+            this.update = function (deltaT) {
+                this.life -= deltaT;
+
+                if (this.life > 0) {
+                    this.position.x += this.velocity.x * deltaT;
+                    this.position.y += this.velocity.y * deltaT;;
+                }
+            };
+            this.paint = function () {
+                gc = canvasArea.context;
+
+                var gradient = gc.createRadialGradient(this.position.x, this.position.y, this.radius * 1.1, this.position.x, this.position.y, this.radius * 0.1);
+                gradient.addColorStop(0, "rgba(255, 250, 0, 0.8)");
+                gradient.addColorStop(0.2, "rgba(255, 150, 0, 0.8)");
+                gradient.addColorStop(1, "rgba(255, 0, 0, 0.8)");
+
+                gc.beginPath();
+                gc.arc(this.position.x, this.position.y, this.radius, this.sAngle, this.eAngle);
+                gc.closePath();
+
+                gc.fillStyle = gradient;
+                gc.fill();
+            };
+        }
+
+        function emitter() {
+            this.container = [];
+            this.addparticle = function (particle) {
+                this.container.unshift(particle);
+            }
+            this.removePatical = function () {
+                this.container.pop();
+            }
+            this.update = function (delta) {
+                for (var i = this.container.length - 1; i >= 0; i--) {
+                    this.container[i].update(delta);
+                }
+            }
+            this.paint = function () {
+                for (var i = this.container.length - 1; i >= 0; i--) {
+                    this.container[i].paint();
+                }
+            }
+        }
+
+        //===========================================
+        //  Main Functions
+        //===========================================
+        var p1,
+            p2,
+            p3,
+            emitter;
+
+        function build() {
+            emitter = new emitter();
+        }
+
+        function getRandomIntInclusive(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        var randDegrees;
+        function update() {
+            
+            //particle: x, y, life, degrees, speed
+            randDegrees = getRandomIntInclusive(-30, -60);
+            emitter.addparticle(new particle(10, 10, 20, randDegrees, 30));
+
+            if (emitter.container[emitter.container.length - 1].life <= 0) {
+                emitter.removePatical();
+            }
+
+            emitter.update(0.1);
+        }
+
+        function paint() {
+            //canvas
+            canvasArea.clear();
+            canvasArea.color = "black";
+            canvasArea.paint();
+
+            emitter.paint();
+        }
+
+        function mainLoop() {
+            requestAnimFrame(mainLoop);
+            update();
+            paint();
+        }
+
+        //===========================================
+        //  Run
+        //===========================================
+        window.onload = function () {
+            canvasArea.create();
+            build();
+            mainLoop();
+        }
+    </script>
+</body>
+
+</html>
