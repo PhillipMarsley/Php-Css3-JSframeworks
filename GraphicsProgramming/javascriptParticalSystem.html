@@ -28,12 +28,33 @@
         //============================================
         //  Declare Variables
         //============================================
-        var container = document.getElementById("container");
-        var canvas = document.getElementById("canvas");
-        var gc = canvas.getContext("2d");
+        var container = document.getElementById("container"),
+            canvas = document.getElementById("canvas"),
+            canvasColor = "rgba(0, 0, 0, 1)",
+            gc = canvas.getContext("2d"),
+            fps = 1000 / 60,
+            particleSize = 4,
+            randDegrees = 0,
+            randLife = 0,
+            emitter;
+
+        //============================================
+        //  Helpers
+        //============================================
+        function getRandomIntInclusive(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getRandomFloatInclusive(min, max) {
+            return (Math.random() * (max - min)) + min;
+        }
+
         //===========================================
-        //  
+        //  Objects
         //===========================================
+
         window.requestAnimFrame = (function () {
             return window.requestAnimationFrame ||
                 window.webkitRequestAnimationFrame ||
@@ -41,7 +62,7 @@
                 window.oRequestAnimationFrame ||
                 window.msRequestAnimationFrame ||
                 function (/* function */ callback, /* DOMElement */ element) {
-                    window.setTimeout(callback, 1000 / 60);
+                    window.setTimeout(callback, fps);
                 };
         })();
 
@@ -57,64 +78,54 @@
                     - parseInt(window.getComputedStyle(this.canvas).marginBottom)
                     - parseInt(window.getComputedStyle(container).borderBottomWidth);
                 this.context = this.canvas.getContext("2d");
-                this.color;
             },
             clear: function () {
                 gc.clearRect(0, 0, this.canvas.width, this.canvas.height);
             },
             paint: function () {
-                gc.fillStyle = this.color;
+                gc.globalCompositeOperation = "source-over";
+                gc.fillStyle = canvasColor;
                 gc.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                gc.globalCompositeOperation = "lighter";
             }
         }
 
         function particle(x, y, life, angle, speed) {
-            this.color = "purple";
-            this.radius = 2;
-            this.sAngle = 0 * Math.PI;
-            this.eAngle = 2 * Math.PI;
             this.life = life;
-            var angleInRadians = angle * Math.PI / 180;
+            this.angleInRadians = angle * Math.PI / 180;
+            this.xAngleAdd = getRandomIntInclusive(1, 4);
+            this.yAngleAdd = getRandomIntInclusive(1, 4);
             this.position = {
                 x: x,
                 y: y
             };
             this.velocity = {
-                x: speed * Math.cos(angleInRadians),
-                y: -speed * Math.sin(angleInRadians)
+                x: speed * Math.cos(this.angleInRadians),
+                y: -speed * Math.sin(this.angleInRadians)
             };
             this.update = function (deltaT) {
                 this.life -= deltaT;
 
                 if (this.life > 0) {
                     this.position.x += this.velocity.x * deltaT;
-                    this.position.y += this.velocity.y * deltaT;;
+                    this.position.y += this.velocity.y * deltaT;
+
+                    this.position.x *= Math.pow(1.001, this.xAngleAdd);
+                    this.position.y *= Math.pow(1.001, this.yAngleAdd);
                 }
-            };
-            this.paint = function () {
-                gc = canvasArea.context;
-
-                var gradient = gc.createRadialGradient(this.position.x, this.position.y, this.radius * 1.1, this.position.x, this.position.y, this.radius * 0.1);
-                gradient.addColorStop(0, "rgba(255, 250, 0, 0.8)");
-                gradient.addColorStop(0.2, "rgba(255, 150, 0, 0.8)");
-                gradient.addColorStop(1, "rgba(255, 0, 0, 0.8)");
-
-                gc.beginPath();
-                gc.arc(this.position.x, this.position.y, this.radius, this.sAngle, this.eAngle);
-                gc.closePath();
-
-                gc.fillStyle = gradient;
-                gc.fill();
             };
         }
 
         function emitter() {
             this.container = [];
-            this.addparticle = function (particle) {
-                this.container.unshift(particle);
+            this.addparticles = function () {
+                randDegrees = getRandomIntInclusive(-30, -60);
+                randLife = getRandomIntInclusive(200, 255);
+                //particle: x, y, life, degrees, speed
+                this.container.unshift(new particle(10, 10, randLife, randDegrees, 2));
             }
-            this.removePatical = function () {
-                this.container.pop();
+            this.removeParticle = function (index) {
+                this.container.splice(index, 1);
             }
             this.update = function (delta) {
                 for (var i = this.container.length - 1; i >= 0; i--) {
@@ -122,8 +133,14 @@
                 }
             }
             this.paint = function () {
+                gc.fillStyle = "rgba(255, 100, 0, 0.5)";
+
                 for (var i = this.container.length - 1; i >= 0; i--) {
-                    this.container[i].paint();
+                    var c = this.container[i],
+                        x = c.position.x,
+                        y = c.position.y;
+
+                    gc.fillRect(x, y, particleSize, particleSize);
                 }
             }
         }
@@ -131,39 +148,30 @@
         //===========================================
         //  Main Functions
         //===========================================
-        var p1,
-            p2,
-            p3,
-            emitter;
+
 
         function build() {
             emitter = new emitter();
         }
 
-        function getRandomIntInclusive(min, max) {
-            min = Math.ceil(min);
-            max = Math.floor(max);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        var randDegrees;
         function update() {
-            
-            //particle: x, y, life, degrees, speed
-            randDegrees = getRandomIntInclusive(-30, -60);
-            emitter.addparticle(new particle(10, 10, 20, randDegrees, 30));
-
-            if (emitter.container[emitter.container.length - 1].life <= 0) {
-                emitter.removePatical();
+            for (var i = 0; i < 25; i++) {
+                emitter.addparticles();
             }
 
-            emitter.update(0.1);
+            for (var i = emitter.container.length - 1; i >= 0; i--) {
+                if (emitter.container[i].life <= 0) {
+                    emitter.removeParticle(i);
+                }
+            }
+
+            emitter.update(1);
         }
 
         function paint() {
             //canvas
             canvasArea.clear();
-            canvasArea.color = "black";
+            canvasArea.color = "rgba(0, 0, 0, 1)";
             canvasArea.paint();
 
             emitter.paint();
@@ -187,3 +195,17 @@
 </body>
 
 </html>
+
+<!--
+        // function fireGradient(x, y, r, life) {
+        //     var g = gc.createRadialGradient(x, y, r * 0.1, x, y, r * 1.1);
+        //     g.addColorStop(0, "rgba(255, 255, 255, 1)");
+        //     g.addColorStop(0.4, "rgba(255, 255," + (200 + life) + ", 1)");
+        //     g.addColorStop(0.4, "rgba(255," + (100 + life) + ", 0, 1)");
+        //     g.addColorStop(0.7, "rgba(255," + (10 + life) + ", 0, 1)");
+        //     g.addColorStop(0.8, "rgba(255, 0, 0, 1)");
+        //     g.addColorStop(1, "rgba(255, 0, 0, 1)");
+        //     return g;
+        // }
+
+-->
