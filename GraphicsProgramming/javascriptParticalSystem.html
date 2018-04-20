@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Javascript particles</title>
+    <title>Javascript Particles</title>
     <style>
         #container {
             width: 40em;
@@ -30,13 +30,17 @@
         //============================================
         var container = document.getElementById("container"),
             canvas = document.getElementById("canvas"),
-            canvasColor = "rgba(0, 0, 0, 1)",
             gc = canvas.getContext("2d"),
-            fps = 1000 / 60,
-            particleSize = 4,
+            CANVAS_COLOR = "rgba(0, 0, 0, 1)",
+            particles = [],
+            EMITTER_A;
+
+        var FPS = 1000 / 60,
+            MAX_PARTICLES = 20000,
+            EMISSION_RATE = 10,
+            PARTICLE_SIZE = 4,
             randDegrees = 0,
-            randLife = 0,
-            emitter;
+            randLife = 0;
 
         //============================================
         //  Helpers
@@ -51,8 +55,30 @@
             return (Math.random() * (max - min)) + min;
         }
 
+        function Vector(x, y) {
+            this.x = x || 0;
+            this.y = y || 0;
+        };
+
+        Vector.prototype.add = function (vector) {
+            this.x += vector.x;
+            this.y += vector.y;
+        };
+
+        Vector.prototype.getMagnitude = function () {
+            return Math.sqrt(this.x * this.x + this.y * this.y);
+        };
+
+        Vector.prototype.getAngle = function () {
+            return Math.atan2(this.y, this.x);
+        };
+
+        Vector.fromAngle = function (angle, magnitude) {
+            return new Vector(magnitude * Math.cos(angle), magnitude * Math.sin(angle));
+        };
+
         //===========================================
-        //  Objects
+        //  Animation Frames
         //===========================================
 
         window.requestAnimFrame = (function () {
@@ -62,11 +88,15 @@
                 window.oRequestAnimationFrame ||
                 window.msRequestAnimationFrame ||
                 function (/* function */ callback, /* DOMElement */ element) {
-                    window.setTimeout(callback, fps);
+                    window.setTimeout(callback, FPS);
                 };
         })();
 
-        var canvasArea = {
+        //===========================================
+        //  Objects
+        //===========================================
+
+        var CanvasArea = {
             canvas: document.getElementById("canvas"),
             create: function () {
                 this.canvas.width = container.clientWidth
@@ -79,115 +109,150 @@
                     - parseInt(window.getComputedStyle(container).borderBottomWidth);
                 this.context = this.canvas.getContext("2d");
             },
-            clear: function () {
-                gc.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            },
             paint: function () {
                 gc.globalCompositeOperation = "source-over";
-                gc.fillStyle = canvasColor;
+                gc.fillStyle = CANVAS_COLOR;
                 gc.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 gc.globalCompositeOperation = "lighter";
             }
         }
 
-        function particle(x, y, life, angle, speed) {
-            this.life = life;
-            this.angleInRadians = angle * Math.PI / 180;
-            this.xAngleAdd = getRandomIntInclusive(1, 4);
-            this.yAngleAdd = getRandomIntInclusive(1, 4);
-            this.position = {
-                x: x,
-                y: y
-            };
-            this.velocity = {
-                x: speed * Math.cos(this.angleInRadians),
-                y: -speed * Math.sin(this.angleInRadians)
-            };
-            this.update = function (deltaT) {
-                this.life -= deltaT;
-
-                if (this.life > 0) {
-                    this.position.x += this.velocity.x * deltaT;
-                    this.position.y += this.velocity.y * deltaT;
-
-                    this.position.x *= Math.pow(1.001, this.xAngleAdd);
-                    this.position.y *= Math.pow(1.001, this.yAngleAdd);
-                }
-            };
+        function Particle(point, velocity, acceleration) {
+            this.position = point || new Vector(0, 0);
+            this.velocity = velocity || new Vector(0, 0);
+            this.acceleration = acceleration || new Vector(0, 0);
         }
 
-        function emitter() {
-            this.container = [];
-            this.addparticles = function () {
-                randDegrees = getRandomIntInclusive(-30, -60);
-                randLife = getRandomIntInclusive(200, 255);
-                //particle: x, y, life, degrees, speed
-                this.container.unshift(new particle(10, 10, randLife, randDegrees, 2));
-            }
-            this.removeParticle = function (index) {
-                this.container.splice(index, 1);
-            }
-            this.update = function (delta) {
-                for (var i = this.container.length - 1; i >= 0; i--) {
-                    this.container[i].update(delta);
-                }
-            }
-            this.paint = function () {
-                gc.fillStyle = "rgba(255, 100, 0, 0.5)";
+        Particle.prototype.move = function () {
+            this.velocity.add(this.acceleration);
+            this.position.add(this.velocity);
 
-                for (var i = this.container.length - 1; i >= 0; i--) {
-                    var c = this.container[i],
-                        x = c.position.x,
-                        y = c.position.y;
+            this.position.x *= 1.005;
+            // this.position.y *= 1.005;
+        }
 
-                    gc.fillRect(x, y, particleSize, particleSize);
+        function Emitter(point, velocity, spread) {
+            this.position = point;
+            this.velocity = velocity;
+            this.spread = spread || Math.PI / 32; //possible angles = velocity +/- spread
+            this.paintColor = "#999";
+        }
+
+        Emitter.prototype.emitParticle = function () {
+            this.eAngle = this.velocity.getAngle() + this.spread - (Math.random() * this.spread * 2);
+            this.eMagnitude = this.velocity.getMagnitude();
+            this.ePosition = new Vector(this.position.x, this.position.y);
+            this.eVelocity = Vector.fromAngle(this.eAngle, this.eMagnitude);
+            // var acceleration = new Vector(2, 2);
+            return new Particle(this.ePosition, this.eVelocity, /*acceleration*/);
+        }
+
+        function addNewParticles() {
+            if (particles.length > MAX_PARTICLES) {
+                return;
+            }
+
+            for (var i = 0; i < EMISSION_RATE; i++) {
+                particles.push(EMITTER_A.emitParticle());
+            }
+        }
+
+        function plotParticles(boundsX, boundsY) {
+            var currentParticles = [];
+
+            for (var i = 0; i < particles.length; i++) {
+                var particle = particles[i];
+                var pos = particle.position;
+
+                if (pos.x <= 0 || pos.x >= boundsX && pos.y <= 0 || pos.y >= boundsY) {
+                    continue;
                 }
+
+                if(particle.life <= 0) {
+                    continue;
+                }
+
+                particle.move();
+                currentParticles.push(particle);
+            }
+
+            particles = currentParticles;
+        }
+
+        function drawParticles() {
+            gc.fillStyle = "rgba(255, 100, 0, 0.5)";
+
+            for (var i = 0; i < particles.length; i++) {
+                var position = particles[i].position;
+                gc.fillRect(position.x, position.y, PARTICLE_SIZE, PARTICLE_SIZE);
             }
         }
 
         //===========================================
         //  Main Functions
         //===========================================
-
-
         function build() {
-            emitter = new emitter();
+            CanvasArea.create();
+            EMITTER_A = new Emitter(new Vector(10, 10), Vector.fromAngle(1, 2));
         }
 
+        function clear() {
+            gc.clearRect(0, 0, CanvasArea.canvas.width, CanvasArea.canvas.height);
+        }
+
+
+        // var spiralChange = 0.01;
+        // var change = 0.05;
+
+        // var spreadChange = 0.01;
+
         function update() {
-            for (var i = 0; i < 25; i++) {
-                emitter.addparticles();
-            }
+            // if (spiralChange >= 0.5) {
+            //     change += -0.05;
+            // }
 
-            for (var i = emitter.container.length - 1; i >= 0; i--) {
-                if (emitter.container[i].life <= 0) {
-                    emitter.removeParticle(i);
-                }
-            }
+            // if (spiralChange <= 0) {
+            //     change += 0.05;
+            // }
 
-            emitter.update(1);
+            // spiralChange += change;
+
+            // EMITTER_A.velocity = Vector.fromAngle(spiralChange, 3);
+
+            // if (EMITTER_A.spread >= 0.4) {
+            //     spreadChange = -0.01;
+            // }
+
+            // if (EMITTER_A.spread <= 0.2) {
+            //     spreadChange = 0.01;
+            // }
+
+            // EMITTER_A.spread += spreadChange;
+
+            addNewParticles();
+            plotParticles(CanvasArea.canvas.width, CanvasArea.canvas.height);
         }
 
         function paint() {
-            //canvas
-            canvasArea.clear();
-            canvasArea.color = "rgba(0, 0, 0, 1)";
-            canvasArea.paint();
+            CanvasArea.paint();
+            drawParticles();
+        }
 
-            emitter.paint();
+        function queue() {
+            requestAnimFrame(mainLoop);
         }
 
         function mainLoop() {
-            requestAnimFrame(mainLoop);
+            clear();
             update();
             paint();
+            queue();
         }
 
         //===========================================
         //  Run
         //===========================================
         window.onload = function () {
-            canvasArea.create();
             build();
             mainLoop();
         }
@@ -195,17 +260,3 @@
 </body>
 
 </html>
-
-<!--
-        // function fireGradient(x, y, r, life) {
-        //     var g = gc.createRadialGradient(x, y, r * 0.1, x, y, r * 1.1);
-        //     g.addColorStop(0, "rgba(255, 255, 255, 1)");
-        //     g.addColorStop(0.4, "rgba(255, 255," + (200 + life) + ", 1)");
-        //     g.addColorStop(0.4, "rgba(255," + (100 + life) + ", 0, 1)");
-        //     g.addColorStop(0.7, "rgba(255," + (10 + life) + ", 0, 1)");
-        //     g.addColorStop(0.8, "rgba(255, 0, 0, 1)");
-        //     g.addColorStop(1, "rgba(255, 0, 0, 1)");
-        //     return g;
-        // }
-
--->

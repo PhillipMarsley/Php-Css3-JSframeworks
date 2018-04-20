@@ -128,7 +128,7 @@
         var deg = 0;
 
         function rotateCube() {
-            document.getElementById("cube").style.transform = "translateZ( -100px) rotate3d(1, 1, 1.2," + deg + "deg)";
+            document.getElementById("cube").style.transform = "translateZ( -100px) rotate3d(1, 1, 2," + deg + "deg)";
         }
 
         function step(timestamp) {
@@ -142,6 +142,7 @@
                 deg = 0;
             }
 
+            // deg += 0.5;
             deg += 0.5;
             rotateCube();
 
